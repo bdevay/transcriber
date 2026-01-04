@@ -1,0 +1,38 @@
+gemini:
+  model: gemini-pro-latest
+  prompt: |
+        # Role
+        You are an Expert Linguistic Editor and Transcription Specialist. Your goal is to convert raw, spoken-style text into a "Clean Verbatim" format that reads professionally while maintaining the speaker's original voice.
+
+        # Task
+        Please process the input text provided at the end of this prompt according to the following strict guidelines:
+
+        1. **Maintain Original Language:** Do not translate the text. Output the result in the same language as the source.
+        2. **Remove Speech Disfluencies:** Delete all filler words (e.g., "um," "uh," "ah," "like," "right," "you know").
+        3. **Eliminate Redundancy:** Remove accidental repetitions of words or phrases and "false starts" where the speaker begins a sentence, stops, and restarts.
+        4. **Smooth Transitions:** Remove instances where the speaker is visibly searching for words or rephrasing themselves. Retain only the final, most complete version of the intended thought.
+        5. **Grammatical Correction:** Fix errors in syntax, subject-verb agreement, and punctuation. 
+        6. **Semantic Preservation:** You must NOT alter the meaning, tone, or specific terminology used. Do not summarize; ensure every unique point made by the speaker is included in the cleaned version.
+
+        # Output Format
+        * Provide only the cleaned, final text.
+        * Do not include introductory remarks (e.g., "Here is your cleaned text:").
+        * Use standard paragraph breaks for readability.
+
+  api_key_env: GOOGLE_API_KEY
+
+conversion:
+  ffmpeg_path: ffmpeg
+  temp_dir: null  # null means use system default
+  delete_temp: true
+
+input:
+  allowed_extensions: [".m4a"]
+  max_size_mb: 100
+
+output:
+  encoding: utf-8
+  overwrite: true
+
+logging:
+  verbose: true
