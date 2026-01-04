@@ -14,10 +14,6 @@ A simple Python script for transcribing and managing text transcriptions. This r
 config.yml                  # Configuration file for the transcription process
 requirements.txt            # Python dependencies
 transcribe.py               # Main script for processing transcriptions
-transcription_orig.txt      # Original transcription file
-transcription_orig_part1.txt
-transcription_orig_part2.txt
-transcription_orig_part3.txt
 ```
 
 ## Getting Started
@@ -31,7 +27,7 @@ transcription_orig_part3.txt
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/transcriber.git
+   git clone https://github.com/bdevay/transcriber.git
    cd transcriber
    ```
 2. **Install dependencies:**
@@ -52,16 +48,6 @@ python transcribe.py
 ```
 
 Depending on your configuration, the script will read the original transcription file and output split files (e.g., `transcription_orig_part1.txt`, `transcription_orig_part2.txt`, etc.).
-
-## Example
-
-Suppose you have a large transcription in `transcription_orig.txt`. After running the script, you will get several smaller files:
-
-- `transcription_orig_part1.txt`
-- `transcription_orig_part2.txt`
-- `transcription_orig_part3.txt`
-
-These files are easier to review and manage.
 
 ## Customization
 
