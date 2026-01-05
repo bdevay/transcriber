@@ -11,7 +11,7 @@ A simple Python script for transcribing and managing text transcriptions. This r
 ## Repository Structure
 
 ```
-config.yml                  # Configuration file for the transcription process
+config_transcriber.yml                  # Configuration file for the transcription process
 requirements.txt            # Python dependencies
 transcribe.py               # Main script for processing transcriptions
 ```
@@ -37,7 +37,7 @@ transcribe.py               # Main script for processing transcriptions
 
 ### Configuration
 
-Edit the `config.yml` file to adjust settings for your transcription process. Example configuration options may include input/output file paths, splitting parameters, etc.
+Edit the `config_transcriber.yml` file to adjust settings for your transcription process. Example configuration options may include input/output file paths, splitting parameters, etc.
 
 ### Usage
 
@@ -52,7 +52,7 @@ Depending on your configuration, the script will read the original transcription
 ## Customization
 
 - Adjust the splitting logic or output format by modifying `transcribe.py`.
-- Update `config.yml` to change input/output file names or other parameters.
+- Update `config_transcriber.yml` to change input/output file names or other parameters.
 
 ## Contributing
 

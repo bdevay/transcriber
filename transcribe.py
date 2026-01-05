@@ -98,7 +98,7 @@ def transcribe_with_gemini(flac_path, api_key, model, prompt):
         print(f"[ERROR] Gemini API error ({e.code}): {e.message}")
         raise TranscriptionError(f"Gemini API error ({e.code}): {e.message}")
 
-def load_config(config_path="config.yml"):
+def load_config(config_path="config_transcriber.yml"):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
     return config
@@ -189,7 +189,7 @@ def main():
     parser.add_argument('--input-list', help="Text file with list of input files (one per line)")
     parser.add_argument('--output-dir', help="Directory to write output files")
     parser.add_argument('--prefix', help="Prefix for output files if not specified")
-    parser.add_argument('--config', default="config.yml", help="Path to config file")
+    parser.add_argument('--config', default="config_transcriber.yml", help="Path to config file")
     # argparse adds -h/--help by default, so do not add it explicitly
 
     # First parse only --config to get config path
