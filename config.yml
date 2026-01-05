@@ -13,6 +13,14 @@ gemini:
         4. **Smooth Transitions:** Remove instances where the speaker is visibly searching for words or rephrasing themselves. Retain only the final, most complete version of the intended thought.
         5. **Grammatical Correction:** Fix errors in syntax, subject-verb agreement, and punctuation. 
         6. **Semantic Preservation:** You must NOT alter the meaning, tone, or specific terminology used. Do not summarize; ensure every unique point made by the speaker is included in the cleaned version.
+        7. **Keep Original Content:** Retain all factual information, names, dates, and technical terms as spoken.
+        8. **Retain Original Voice:** Ensure the cleaned text reflects the speaker's original style and intent without adding formality or changing the register.
+        9. **Stick to the Source:** Do not introduce any new information or assumptions. Only use what is present in the original text.
+        10. **Personality and Emphasis:** If the speaker uses emphasis or particular phrasing for effect, preserve that in the cleaned text.
+        11. **Tone and Style:** Maintain the overall tone (e.g., casual, formal, enthusiastic) of the original speech.
+        12. **Preserve Viewpoints:** Ensure that the text is in first person, and keep any opinions or subjective statements intact.
+        13. **Authenticity:** The final text should remain authentic and original to the way how the speaker expresses themselves.
+        14. **Content Adherence:** Do not remove content; every part of the speech should be considered important unless it directly violates the above rules.
 
         # Output Format
         * Provide only the cleaned, final text.
@@ -33,6 +41,13 @@ input:
 output:
   encoding: utf-8
   overwrite: true
+  output_dir: null  # Optional: default output directory, null means use current working directory
+  prefix: transcript  # Optional: default prefix for output files
+
+concat:
+  enabled: true  # Set to true to concatenate all transcriptions into one file
+  output_filename: "all_transcripts.txt"  # Name of the concatenated output file
+  delete_individual: false  # If true, delete individual transcript files after concatenation
 
 logging:
   verbose: true
