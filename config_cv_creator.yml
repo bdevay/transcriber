@@ -1,0 +1,513 @@
+workflow:
+  - step: start_and_gather_inputs
+    description: "Start the CV creation process and gather necessary inputs."
+    type: gather_inputs
+    cv_structure: |
+      # Your Name Here
+      ## Contact Information
+      Country ◆ email@example.com ◆ +31234567890 ◆ in/yourlinkedin ◆ github.com/yourgithub
+      ## INTRODUCTION
+      ## KEY STRENGTHS
+      ## PROFESSIONAL EXPERIENCE
+      ## FURTHER ROLES
+      ## EDUCATION
+      ## PATENTS & INNOVATION
+      ## LANGUAGE SKILLS
+  - step: download_job_description
+    description: "Download the job description from the provided link."
+    type: download_document
+    dependencies: [start_and_gather_inputs]
+  - step: extract_job_description
+    description: "Extract plain text from the downloaded job description HTML."
+    type: llm_task
+    dependencies: [download_job_description]
+    prompt_variables: [jd_html]
+    output_variable: jd_text
+    llm:
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+        model: "gemini-flash-latest"
+        prompt: |
+          Extract and return the plain text content from the following HTML document that are related to the job description and remove unrelated contents:\n\n
+
+          {{jd_html}}
+  - step: research_company
+    description: "Conduct deep-dive research into the company from the job description."
+    type: llm_task
+    dependencies: [extract_job_description]
+    prompt_variables: [jd_text]
+    output_variable: company_research
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            ## Role
+
+            You are an expert **Job Market Researcher** and **Strategic Career Consultant**. Your goal is to perform exhaustive due diligence on a specific company to provide a candidate with the "insider knowledge" needed to craft a high-impact, tailored resume.
+
+            ## Task
+
+            Conduct deep-dive research into the company provided in the job description. Your objective is to uncover nuanced details that go beyond the surface-level job posting.
+
+            ## Research Dimensions
+
+            Analyze and synthesize information across the following categories:
+
+            * **Company Culture & Values:** What is the "unwritten" code of conduct? Look for evidence of work-life balance, DEI initiatives, leadership styles, and employee sentiment.
+            * **Technology Stack & Innovation:** Identify the core technologies, frameworks, and methodologies they use. Are they legacy-heavy or cutting-edge? What recent tech pivots have they made?
+            * **Organizational Structure:** Research the company's scale, department hierarchies, and any recent leadership changes or restructuring.
+            * **Market Position & Reputation:** Investigate recent news, financial performance, major acquisitions, or controversies.
+            * **Employee Insights:** Synthesize themes from forums and discussion boards regarding what it is actually like to work there.
+
+            ## Data Sources
+
+            You must prioritize and cross-reference the following:
+
+            1. **Official Channels:** Company website, "About Us" pages, investor relations, and official press releases.
+            2. **Public Forums:** Reddit, Glassdoor, Blind, and specialized industry forums.
+            3. **News & Media:** Recent articles from tech journals, business news (CNBC, Forbes, etc.), and local news.
+            4. **Social Evidence:** LinkedIn company insights and professional discussions.
+
+            ## Output Format
+            Provide a comprehensive report organized by the categories above, concluding with a **"Resume Strategy"** section that suggests specific keywords and themes the candidate should emphasize.
+
+            ## Job Description
+
+            {{jd_text}}
+  - step: create_introduction_prompt
+    description: "Generate a detailed prompt for creating a tailored professional introduction."
+    type: llm_task
+    dependencies: [research_company]
+    prompt_variables: [jd_text, company_research]
+    output_variable: introduction_prompt
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Role
+            You are an expert Prompt Engineer and Career Consultant specializing in ATS (Applicant Tracking System) optimization and professional branding.
+
+            # Task
+            Analyze the provided **Job Description** and **Company Research**. Based on this analysis, your goal is to generate a **highly detailed instruction (a "Summary-Drafting Prompt")**.
+
+            This generated prompt will be used in a future session with Gemini 3 Pro. The user will provide their detailed work history, and your generated prompt must instruct Gemini 3 Pro to synthesize that work history into a powerful, tailored professional summary.
+
+            # Requirements for the Prompt You Generate
+
+            The prompt you output must instruct Gemini 3 Pro to:
+
+            1. **Adopt a Persona:** Act as a world-class executive resume writer.
+            2. **Analyze Alignment:** Identify the top 3-5 core competencies and keywords from the Job Description and weave them into the summary.
+            3. **Focus on Impact:** Prioritize quantifiable achievements (data, percentages, revenue) over generic responsibilities.
+            4. **Tone & Style:** Match the company culture (e.g., corporate/formal vs. tech/innovative).
+            5. **Structure:** Keep the summary to 3-5 punchy sentences or a short paragraph.
+            6. **Constraint:** Ensure the final summary is written in the third person or the "implied first person" (no "I" or "me").
+
+            # Output Format
+            Please provide the output as a standalone block of text that I can copy and paste directly into a new chat once I have my CV ready. Do not provide any observations, recommendations, further questions, leading or closing texts, or feedback. Only provide the prompt itself.
+
+            # Job Description
+            {{jd_text}}
+
+            # Company Research
+            {{company_research}}
+  - step: introduction_creation
+    description: "Generate the introduction for the candidate."
+    type: llm_task
+    dependencies: [create_introduction_prompt]
+    prompt_variables: [jd_text, company_research, introduction_prompt, details_text]
+    output_variable: introduction_text
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Task
+            {{introduction_prompt}}
+
+            Adjust the summary to the job description, include what raise the recruiter's attention based on the job description. DO NOT make up things, stick to the information provided in the CV. However, feel free to reframe the information to align to the job description's requirements better.
+            Keep the text short as this is just an introduction; the CV will contain the technical details.
+            DO NOT provide recommendations, further questions, observations, instructions; only provide the drafted text.
+
+            # Company characteristics
+            {{company_research}}
+
+            # Instructions to write professional CV by expert recruiters
+            1. Start with clarity: What is the next step in your financial career? 
+            Before you update your CV, define your direction. Ask yourself: what is the next step in my career story? 
+            Everything a candidate says and does should follow from a clear understanding of where they belong next in their professional life.
+            Once you know the type of role you want, you can tailor your CV to highlight the skills, results, and experience that match that target. Amy calls this the “Olympic Rings” of your career: the shared space between what you've done, what you do best, and what you want next. 
+            Your CV should act as a roadmap toward your next role, not a record of everything you've done. 
+            Define your next move before editing your CV. Focus your achievements and keywords on roles that support your future direction.
+            2. Build your billboard: Create a personal brand headline 
+            Skip the old “objective statement.” Start instead with a short personal brand headline. This section gives a quick snapshot that helps hiring teams see your value right away. 
+            Your headline should answer three questions:
+            - Who are you?
+            - What do you do best?
+            - What drives you?
+            Example: “Analytical finance professional focused on risk aware growth strategies across global markets.” 
+            It sets your direction before anyone reads further. 
+            Tip: Write this section last. Once your achievements are clear, it becomes easier to summarise your story in one strong opening paragraph.
+            3. Transform duties into measurable results 
+            A common mistake is listing tasks without showing outcomes. Hiring managers want to understand the impact you delivered, not just what you handled. 
+            A useful method is to lead with the result, then explain how you achieved it. 
+            Don't tell employers what you did. Show them why it mattered.
+            Example: “Increased portfolio yield by 25% percent by redesigning risk assessment models for low yield investments.” 
+            This turns your CV into a record of results, not responsibilities. 
+            Tip: Lead bullets with outcomes and quantify them when possible. 
+            4. Show how you improved the business, not just how you did your job 
+            Hiring managers want proof of value. They want to see how your work improved performance, processes, or decision making. 
+            Highlight where you: 
+            - Improved workflows 
+            - Strengthened relationships 
+            - Reduced risk 
+            - Supported capability growth 
+            - Delivered insights that informed decisions 
+            A simple test is to ask: What improved because of my work? 
+            Tip: Use the CAR framework [Challenge, Action, Result] to structure each point. Use action-based language such as improved, optimised, strengthened, reduced, accelerated, or delivered. 
+            5. Align your CV with your interview preparation 
+            An impact focused CV sets you up for stronger interviews. Each achievement becomes a story you can expand on. Amy explains,
+            A well written CV is the foundation for great interviews. It gives you ready made stories to share about your results.
+            Use your bullet points as prompts. Develop concise stories that show what you achieved and how you approached challenges. This demonstrates skill, initiative, and personality. 
+            Tip: Use your CV achievements as interview talking points. Consistency between what you write and what you say builds credibility.
+            6. Why targeted applications outperform mass applying 
+            Online job boards and AI driven quick apply tools make it easy to send out large volumes of applications, but volume rarely produces strong results. 
+            Just because it's possible doesn't mean it's best.
+            Corporate openings receive an average of 250 applications, and usually only 4 to 6 candidates are invited to interview. Employers respond to relevance and alignment, not quantity. 
+            A targeted CV tailored to well matched roles makes for a stronger impression than broad mass applying. 
+            Tip: Focus on 6 to 10 high quality applications that closely match your skills and goals. 
+            7. Own your career story 
+            Your CV should evolve as your career grows. Review it regularly so it reflects your achievements, skill development, and future direction. 
+            Key steps to maintain a strong finance resume: 
+            - Quantify results whenever possible 
+            - Refine your headline so it reflects your expertise and goals 
+            - Update skills, certifications, and recent responsibilities 
+            - Remove older roles that no longer support your career story
+
+            Use the following text and extract the relevant information from it:
+            {{details_text}}
+
+            The following Job Description is provided for context:
+            {{jd_text}}
+  - step: key_strengths_prompt
+    description: "Generate a prompt to draft key strengths for the CV."
+    type: llm_task
+    dependencies: [download_job_description, research_company]
+    prompt_variables: [jd_text, company_research]
+    output_variable: key_strengths_prompt
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Role
+            You are an expert Resume Strategist and Technical Recruiter specializing in executive-level career mapping.
+
+            # Context
+            I am going to provide you with a Job Description and Company Research. Your task is to analyze this JD to understand its core requirements, culture, and technical needs. 
+
+            # Task
+            Based on your analysis of the JD, write a highly specific "Resume Drafting Instruction." This instruction will be used in a later step where I provide a candidate's work history/CV to generate a "Key Strengths" section.
+
+            # Requirements for the Instruction you generate:
+            The instruction you create must direct the LLM to draft a "Key Strengths" section divided into exactly these three categories:
+            1. **Leadership & Innovation:** Focus on visionary thinking, team mentorship, and driving change.
+            2. **Project & Delivery Management:** Focus on methodology, execution, KPIs, and stakeholder management.
+            3. **Technology Expertise:** Focus on specific stacks, digital transformation, and technical problem-solving.
+
+            # Output Format for the Instruction:
+            Please provide the instruction in a clear, "Copy-Paste" ready format that includes:
+            - A persona for the LLM (e.g., "Act as a professional resume writer...").
+            - A request to cross-reference the candidate's CV against the specific keywords found in the JD I provided.
+            - Guidelines for tone (e.g., punchy, achievement-oriented, and high-impact).
+            - A request to use bullet points for each of the three sections mentioned above.
+
+            # Input
+            Please analyze the provided Job Description and provide the Gemini 3 pro prompt.
+
+            DO NOT provide any leading texts, closing sections, instructions, further questions, recommendations, or any other instructions. Only provide the prompt itself.
+
+            # Job Description
+            {{jd_text}}
+
+            # Company Research
+            {{company_research}}
+  - step: key_strengths_creation
+    description: "Generate the key strengths section for the candidate."
+    type: llm_task
+    dependencies: [key_strengths_prompt]
+    prompt_variables: [jd_text, company_research, key_strengths_prompt, details_text]
+    output_variable: key_strengths_text
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Task
+            {{key_strengths_prompt}}
+
+            Adjust the key strengths to the job description, include what raise the recruiter's attention based on the job description. DO NOT make up things, stick to the information provided in the CV. However, feel free to reframe the information to align to the job description's requirements better.
+            Keep the text short as this is just an introduction; the CV will contain the technical details.
+            DO NOT provide recommendations, further questions, observations, instructions; only provide the drafted text.
+
+            # Company characteristics
+            {{company_research}}
+
+            # Instructions to write professional CV by expert recruiters
+            (Instructions as in the introduction creation step)
+
+            Use the following text and extract the relevant information from it:
+            {{details_text}}
+  - step: section_list_creator
+    description: "Extract individual work experience list from the candidate details."
+    type: llm_task
+    dependencies: [start_and_gather_inputs]
+    prompt_variables: [details_text]
+    output_variable: section_list
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            **System Role:**
+            You are a highly accurate candidate background story parsing engine. Your goal is to convert unstructured text into a structured JSON array of work experience objects and do a very basic research on internet about the web link of the identified company.
+
+            **Task:**
+            Extract previous work experiences from the provided Candidate Details. Find the company's official web page on internet.
+
+            **Constraints:**
+            1. **Focus:** Only extract professional roles explicitly elaborated in the text.
+            2. **Exclusion:** Ignore Education, Certifications, and Skills.
+            3. **Sorting:** The JSON array must be ordered by the start date in **descending order** (most recent first).
+            4. **Data Integrity:** Use "Present" for end dates if the candidate is currently employed. Ensure months and years are included if provided.
+            5. **Strict Output:** Return **ONLY** a valid JSON array. Do not include markdown code blocks (e.g., `json ... `), introductory text, or explanations.
+            6. **Company Official Web Page:** Provide a valid web link to the company's official web page
+            7. **If any information is missing or cannot be determined from the input text, leave the corresponding JSON attribute empty.**
+
+            **Output Schema:**
+            [
+              {
+                "company": "Company Name",
+                "link": "Company Official Web Page",
+                "position": "Job Title",
+                "period": "Month/Year - Month/Year or Present"
+                "experience_summary": "Detailed description of role and responsibilities"
+              }
+            ]
+
+            ## Candidate Details:
+            {{details_text}}
+  - step: section_prompt
+    description: "Generate a prompt to draft a specific section of the CV for alignment with the job description and company research."
+    type: llm_task
+    dependencies: [start_and_gather_inputs, download_job_description, research_company]
+    prompt_variables: [jd_text, details_text, company_research]
+    output_variable: section_prompt
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            **Role:** You are an expert Prompt Engineer and Career Strategist.
+
+            **Objective:** Write a comprehensive and precise system prompt that I can use to instruct an LLM to draft a specific section of a user's CV.
+
+            **Context:**
+            I have pieces of information that will be fed into the final prompt:
+            1. **Candidate Details** related to the relevant work experience.
+            2. **A Job Description**.
+            3. **A Company Research Report** (analysis of the company's culture, values, strategic goals, and market position).
+            4. **The company's official web page link**: {{sections_array[index].link}}
+
+            **Task:**
+            Please generate a prompt that I can paste into an LLM. The prompt you generate must instruct the LLM to:
+
+            * **Analyze all three inputs** deeply.
+            * **Rewrite the provided CV section** so that it aligns perfectly with the Job Description and the Company Research Report.
+            * **Adhere to strict constraints:** It must **never** make up or hallucinate non-existing work experience. It must only rephrase, reframe, and prioritize existing information.
+            * **Focus on alignment:** It should highlight experience with similar technologies, processes, responsibilities, project management frameworks, and team setups mentioned in the JD and CV.
+            * **Match the tone:** It should adopt the terminology and cultural tone found in the JD or Company Research Report.
+
+            **Structure of the Output:**
+            Please provide the final prompt in a Markdown format so I can easily copy it.
+
+            **Refinement for the generated prompt:**
+            Ensure the generated prompt doesn not include a reasonings, leading or closing texts, explanation, recommendations, further questions, etc.
+
+            **Candidate Details:**
+            {{details_text}}
+
+            **Job Description:**
+            {{jd_text}}
+
+            **Company Research:**
+            {{company_research}}
+  - step: iterate_work_experiences
+    description: "Iterate over the extracted work experience JSON array."
+    type: json_iterator
+    dependencies: [section_list_creator]
+    output_variable: sections_text
+    list_variable: section_list
+    actions:
+      - step: section_creator
+        description: "Generate a specific section of the CV aligned with the job description and company research."
+        type: llm_task
+        dependencies: [iterate_work_experiences, download_job_description, research_company, section_prompt]
+        prompt_variables: [jd_text, details_text, company_research, current_item, section_prompt]
+        output_variable: section_text
+        llm:
+          endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+          model: "gemini-flash-latest"
+          prompt: |
+                # Task
+                {{section_prompt}}
+
+                # Related Work Experience
+                1. at the Company: {{current_item.company }}
+                2. in the Position: {{ current_item.position }}
+                3. in the Period:** {{ current_item.period }}
+
+                # Further Instructions
+                1. **Extract:** Locate the section in the provided CV where the user worked defined by the Related Work Experience section.
+                2. **Analyze:** Review the "Company Research" provided above. Identify the company's core values, recent challenges, and the specific skills they likely value for this role.
+                3. **Tailor:** Rewrite the bullet points for this specific experience. 
+                    - Use the **STAR method** (Situation, Task, Action, Result).
+                    - Quantify achievements where possible (e.g., %, $, time saved).
+                    - Mirror the keywords found in the company research and job context.
+                    - Ensure the tone matches the company's culture (e.g., professional vs. innovative/startup).
+                4. **Format:** Return ONLY the rewritten bullet points. Do not include introductory text like "Here is the tailored version."
+
+                # Instructions to write professional CV by expert recruiters
+                1. Start with clarity: What is the next step in your financial career? 
+                Before you update your CV, define your direction. Ask yourself: what is the next step in my career story? 
+                Everything a candidate says and does should follow from a clear understanding of where they belong next in their professional life.
+                Once you know the type of role you want, you can tailor your CV to highlight the skills, results, and experience that match that target. Amy calls this the “Olympic Rings” of your career: the shared space between what you've done, what you do best, and what you want next. 
+                Your CV should act as a roadmap toward your next role, not a record of everything you've done. 
+                Define your next move before editing your CV. Focus your achievements and keywords on roles that support your future direction.
+                2. Build your billboard: Create a personal brand headline 
+                Skip the old “objective statement.” Start instead with a short personal brand headline. This section gives a quick snapshot that helps hiring teams see your value right away. 
+                Your headline should answer three questions:
+                - Who are you?
+                - What do you do best?
+                - What drives you?
+                Example: “Analytical finance professional focused on risk aware growth strategies across global markets.” 
+                It sets your direction before anyone reads further. 
+                Tip: Write this section last. Once your achievements are clear, it becomes easier to summarise your story in one strong opening paragraph.
+                3. Transform duties into measurable results 
+                A common mistake is listing tasks without showing outcomes. Hiring managers want to understand the impact you delivered, not just what you handled. 
+                A useful method is to lead with the result, then explain how you achieved it. 
+                Don't tell employers what you did. Show them why it mattered.
+                Example: “Increased portfolio yield by 25% percent by redesigning risk assessment models for low yield investments.” 
+                This turns your CV into a record of results, not responsibilities. 
+                Tip: Lead bullets with outcomes and quantify them when possible. 
+                4. Show how you improved the business, not just how you did your job 
+                Hiring managers want proof of value. They want to see how your work improved performance, processes, or decision making. 
+                Highlight where you: 
+                - Improved workflows 
+                - Strengthened relationships 
+                - Reduced risk 
+                - Supported capability growth 
+                - Delivered insights that informed decisions 
+                A simple test is to ask: What improved because of my work? 
+                Tip: Use the CAR framework [Challenge, Action, Result] to structure each point. Use action-based language such as improved, optimised, strengthened, reduced, accelerated, or delivered. 
+                5. Align your CV with your interview preparation 
+                An impact focused CV sets you up for stronger interviews. Each achievement becomes a story you can expand on. Amy explains,
+                A well written CV is the foundation for great interviews. It gives you ready made stories to share about your results.
+                Use your bullet points as prompts. Develop concise stories that show what you achieved and how you approached challenges. This demonstrates skill, initiative, and personality. 
+                Tip: Use your CV achievements as interview talking points. Consistency between what you write and what you say builds credibility.
+                6. Why targeted applications outperform mass applying 
+                Online job boards and AI driven quick apply tools make it easy to send out large volumes of applications, but volume rarely produces strong results. 
+                Just because it's possible doesn't mean it's best.
+                Corporate openings receive an average of 250 applications, and usually only 4 to 6 candidates are invited to interview. Employers respond to relevance and alignment, not quantity. 
+                A targeted CV tailored to well matched roles makes for a stronger impression than broad mass applying. 
+                Tip: Focus on 6 to 10 high quality applications that closely match your skills and goals. 
+                7. Own your career story 
+                Your CV should evolve as your career grows. Review it regularly so it reflects your achievements, skill development, and future direction. 
+                Key steps to maintain a strong finance resume: 
+                - Quantify results whenever possible 
+                - Refine your headline so it reflects your expertise and goals 
+                - Update skills, certifications, and recent responsibilities 
+                - Remove older roles that no longer support your career story
+
+                # Job Description:
+                {{jd_text}}
+
+                # Company Research Report
+                {{company_research}}
+
+                # Use the following text and extract the relevant information from it:
+                {{details_text}}
+  - step: document_structure_builder
+    description: "Review and structure the entire CV document in Markdown format including the entire desired content."
+    type: llm_task
+    dependencies: [iterate_work_experiences, introduction_creation, key_strengths_creation]
+    prompt_variables: [introduction_text, key_strengths_text, sections_text, details_text, cv_structure]
+    output_variable: structured_cv_text
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Task
+            You are an expert Resume Editor and Document Processor. Your task is to output a full, professional CV in **Markdown format**.
+
+            I will provide you with two inputs:
+            1. **[CV STRUCTURE]**: The expected structure of the CV.
+            2. **[CONTENT]**: The content to fill into the CV.
+
+            **Your Strict Instructions:**
+            1.  **Base Document:** You must reproduce the **[CONTENT]** in its entirety.
+            2.  **Updates:**
+                * **Introduction:** Fill in the Introduction with the provided version.
+                * **Key Strengths:** Fill in the Key Strengths with the provided version.
+                * **Work Experience:** Fill in each work experience section with the provided versions.
+            4.  **Formatting:** Output the final result in clean, well-structured Markdown. Use `##` for headers and bullet points for lists.
+
+            ---
+
+            ### [CV STRUCTURE]
+            {{cv_structure}}
+
+            ### [CONTENT]
+            #### Introduction
+            {{introduction_text}}
+            #### Key Strengths
+            {{key_strengths_text}}
+            #### Work Experiences
+            {{sections_text}}
+            #### Further Sections
+            {{details_text}}
+  - step: humanizer
+    description: "Humanize the CV content."
+    type: llm_task
+    dependencies: [document_structure_builder]
+    prompt_variables: [structured_cv_text]
+    output_variable: humanized_cv_text
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            Role: You are a high-end Executive Resume Architect and Narrative Copywriter.
+            Task: Analyze the provided AI-generated CV. Rewrite it to be indistinguishable from a human-written document, passing all AI detection, while strictly adhering to the formatting and data constraints below.
+
+            1. The Summary Exception (The Headline):
+            Keep the Professional Summary/Profile section. This is the only section allowed to remain qualitative.
+            Rewrite it as a 3-4 sentence "Mission Statement." It should sound like a human describing their career purpose and "unique way of working."
+            Focus on a storytelling tone here—make it the "Headline" of my professional identity. Even if it lacks figures, do not delete it.
+
+            2. The Experience Audit (The Data Filter):
+            Prune the Fluff: For all other sections (Work Experience, Projects, etc.), scan every bullet point. If a statement does not contain a concrete figure, percentage, dollar amount, or specific quantifiable result, delete it.
+            No Hallucinations: Do not invent data. Use only what is provided.
+            Placeholders: If an achievement is significant but missing a number, use a placeholder like [X%] or [$X] so I can add the fact later. If the point is purely generic (e.g., "Attended meetings"), remove it entirely.
+
+            3. Human-Centric Linguistic Style:
+            Burstiness: Use varied sentence lengths. A short, punchy sentence followed by a longer, more descriptive one. This is the primary way to bypass AI detection.
+            The "Banned" List: Strictly avoid AI-cliches: Leveraged, spearheaded, passionate, fostered, synergy, transformative, dynamic, bespoke, testament, or navigated. > * Natural Verbs: Use grounded, active language: "I ran," "I built," "I cut costs by," "I grew the team to."
+
+            4. Structural Integrity:
+            Mirror the Input: Keep all headers, dates, and company names exactly as they appear in the original document.
+            Formatting: The visual layout must remain unchanged. Do not add new sections or move existing ones.
+            Please analyze the CV provided below. Retain and humanize the Summary, audit the Experience for data-only points, and output the final version in the exact original format.
+
+            ## Input CV:
+            {{structured_cv_text}}
+  - step: output_file
+    description: "Write the result file to disk."
+    type: write_file
+    #to_write_variables: [introduction_prompt, introduction_text, company_research, key_strengths_prompt, key_strengths_text, section_list, sections_text]
+    to_write_variables: [humanized_cv_text]
+    dependencies: [humanizer]
+    output_file: data/cv_result.md

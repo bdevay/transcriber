@@ -3,3 +3,6 @@ python-dotenv
 tqdm
 pyaml
 urllib3<2
+requests
+python-docx
+PyPDF2

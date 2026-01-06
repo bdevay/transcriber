@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug CV Creator",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/cv_creator.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--jd", "https://careers.bol.com/en/job/head-of-engineering/",
+                "--details", "data/transcription_orig_full.txt",
+                "--config", "config_cv_creator.yml",
+                "--output", "data/cv_result.md"
+            ],
+            "python": "${workspaceFolder}/venv/bin/python"
+        }
+    ]
+}
