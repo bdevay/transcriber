@@ -1,0 +1,18 @@
+gemini:
+  model: gemini-2.5-flash
+  api_key_env: GEMINI_API_KEY
+  temperature: 0.3  # Lower for consistency
+
+translation:
+  source_lang: en
+  target_lang: hu
+  preserve_formatting: true
+
+processing:
+  max_workers: 4
+  retry_attempts: 3
+  rate_limit_delay: 1  # seconds between requests
+
+output:
+  encoding: utf-8
+  suffix: "_hu"  # Frascati.md → Frascati_hu.md

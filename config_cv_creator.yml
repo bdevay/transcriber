@@ -2,17 +2,6 @@ workflow:
   - step: start_and_gather_inputs
     description: "Start the CV creation process and gather necessary inputs."
     type: gather_inputs
-    cv_structure: |
-      # Your Name Here
-      ## Contact Information
-      Country ◆ email@example.com ◆ +31234567890 ◆ in/yourlinkedin ◆ github.com/yourgithub
-      ## INTRODUCTION
-      ## KEY STRENGTHS
-      ## PROFESSIONAL EXPERIENCE
-      ## FURTHER ROLES
-      ## EDUCATION
-      ## PATENTS & INNOVATION
-      ## LANGUAGE SKILLS
   - step: download_job_description
     description: "Download the job description from the provided link."
     type: download_document
@@ -73,6 +62,48 @@ workflow:
             ## Job Description
 
             {{jd_text}}
+  - step: create_contact_prompt
+    description: "Generate a prompt to create the contact information section."
+    type: llm_task
+    dependencies: [start_and_gather_inputs]
+    prompt_variables: []
+    output_variable: contact_prompt
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Role
+            You are an expert Resume Formatter and Professional CV Consultant.
+
+            # Task
+            Create a prompt that instructs an LLM to format and present contact information in a professional manner suitable for a CV.
+
+            # Requirements for the Prompt you generate:
+            The prompt you create must direct the LLM to:
+            1. Format the contact information clearly and concisely.
+            2. Use appropriate separators (e.g., ◆) between different pieces of information.
+            3. Ensure that the contact details are easy to read and visually appealing.
+
+            # Output Format for the Prompt:
+            Please provide the instruction in a clear, "Copy-Paste" ready Markdown format.
+
+            DO NOT provide any leading texts, closing sections, instructions, further questions, recommendations, or any other instructions. Only provide the prompt itself.
+  - step: contact_creation
+    description: "Generate the contact information section for the CV."
+    type: llm_task
+    dependencies: [create_contact_prompt]
+    prompt_variables: [contact_prompt]
+    output_variable: contact_text
+    llm:
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+      model: "gemini-flash-latest"
+      prompt: |
+            # Task
+            {{contact_prompt}}
+
+            Use the following contact information to create a professional contact section for a CV:
+
+            {{fixed}}
   - step: create_introduction_prompt
     description: "Generate a detailed prompt for creating a tailored professional introduction."
     type: llm_task
@@ -435,7 +466,7 @@ workflow:
     description: "Review and structure the entire CV document in Markdown format including the entire desired content."
     type: llm_task
     dependencies: [iterate_work_experiences, introduction_creation, key_strengths_creation]
-    prompt_variables: [introduction_text, key_strengths_text, sections_text, details_text, cv_structure]
+    prompt_variables: [introduction_text, key_strengths_text, sections_text, details_text, user_cv_structure]
     output_variable: structured_cv_text
     llm:
       endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
@@ -445,7 +476,7 @@ workflow:
             You are an expert Resume Editor and Document Processor. Your task is to output a full, professional CV in **Markdown format**.
 
             I will provide you with two inputs:
-            1. **[CV STRUCTURE]**: The expected structure of the CV.
+            1. **[CV STRUCTURE]**: The expected structure of the CV (from user config).
             2. **[CONTENT]**: The content to fill into the CV.
 
             **Your Strict Instructions:**
@@ -459,7 +490,7 @@ workflow:
             ---
 
             ### [CV STRUCTURE]
-            {{cv_structure}}
+            {{user_cv_structure}}
 
             ### [CONTENT]
             #### Introduction

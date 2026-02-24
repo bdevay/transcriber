@@ -36,7 +36,7 @@ conversion:
 
 input:
   allowed_extensions: [".m4a"]
-  max_size_mb: 100
+  max_size_mb: 2000
 
 output:
   encoding: utf-8

@@ -1,5 +1,3 @@
-
-
 import argparse
 import os
 import yaml
@@ -126,9 +124,33 @@ def gather_inputs(step, args):
     """
     global variables
 
-    variables['details_text'] = load_details_file(args.details)
+    # Store job description link
     variables['jd_link'] = args.jd
-    variables['cv_structure'] = step.get('cv_structure', [])
+
+    # Load user-specific details config
+    with open(args.details_config, 'r') as f:
+        user_details_config = yaml.safe_load(f)
+    cv_structure = user_details_config.get('cv_structure', [])
+
+    # For each section, load input files and store in variables by section name
+    for section in cv_structure:
+        section_name = section.get('section_name')
+        fixed = section.get('fixed', None)
+        description = section.get('description', '')
+        input_files = section.get('input_files', [])
+        step_name = section.get('step', None)
+
+        section_texts = []
+        for file_path in input_files:
+            if not os.path.isfile(file_path):
+                raise FileNotFoundError(f"Section '{section_name}' input file not found: {file_path}")
+            with open(file_path, 'r') as f:
+                section_texts.append(f.read())
+
+        # Store all user setting from the config_cv_creator.yml in the step's variable 
+        variables[step_name]['input_files'] = section_texts
+        variables[step_name]['description'] = description
+        variables[step_name]['fixed'] = fixed
 
 def download_document():
     """
@@ -262,9 +284,9 @@ def write_file(step, args):
 def main():
     parser = argparse.ArgumentParser(description="CV Creator - Advanced Workflow")
     parser.add_argument('--jd', required=True, help='URL or path to job description')
-    parser.add_argument('--details', required=True, help='Path to background story file (pdf, docx, txt, md)')
+    parser.add_argument('--details-config', required=True, help='Path to user-specific details config YAML (sections, files, etc.)')
     parser.add_argument('--config', default='config_cv_creator.yml', help='Path to workflow config YAML')
-    parser.add_argument('--output', default='cv_result.md', help='Output markdown file')
+    parser.add_argument('--output', default='results/cv_result.md', help='Output markdown file')
     args = parser.parse_args()
 
     load_dotenv()

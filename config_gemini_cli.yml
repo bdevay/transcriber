@@ -1,2 +1,2 @@
-endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
-model: "gemini-flash-latest"
+endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent"
+model: "gemini-pro-latest"
